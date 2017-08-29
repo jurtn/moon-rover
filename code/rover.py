@@ -23,6 +23,9 @@ class MoonRover():
         self.nav_angles = None # Angles of navigable terrain pixels
         self.nav_dists = None # Distances of navigable terrain pixels
 
+        # Angles and distances of sample pixels
+        self.sample_distances, self.sample_angles = None, None
+
         # Read in ground truth map and create 3-channel green version for overplotting
         # NOTE: images are read in by default with the origin (0, 0) in the upper left
         # and y-axis increasing downward.
@@ -34,7 +37,7 @@ class MoonRover():
         self.ground_truth = ground_truth_3d # Ground truth worldmap
 
         # Current mode
-        # Can be one of (forward, stop, approach_sample)
+        # Can be one of (forward, stop)
         self.mode = 'forward'
 
         self.throttle_set = 0.2 # Throttle setting when accelerating
@@ -62,6 +65,8 @@ class MoonRover():
         self.picking_up = 0 # Will be set to telemetry value data["picking_up"]
         self.send_pickup = False # Set to True to trigger rock pickup
 
+        self.approaching_sample = None
+
     def update_steer(self):
         # We compute the percentiles instead of the mean.
         # This makes the rover driving slightly on the left side
@@ -70,6 +75,64 @@ class MoonRover():
         # makes the stearing less than if we would drive on the right side.
         # Otherwise no difference between driving left or right side.
         self.steer = np.clip(np.percentile(self.nav_angles * 180/np.pi, 70), -15, 15)
+
+    def approach_sample(self):
+
+        if self.picking_up:
+            return
+
+        # Check if we are close to the sample and not moving
+        if self.near_sample and self.vel == 0:
+            self.send_pickup = True
+            self.approaching_sample = None
+            return
+
+        if self.near_sample and self.vel > 0:
+            self.mode = 'stop'
+            self.brake = 1
+            self.throttle = 0
+            self.approaching_sample = 'prepare to pickup'
+            return
+
+        # Compute the sample angle
+        if (len(self.sample_angles) > 0):
+            self.last_sample_angles = self.sample_angles
+        mean_angle = np.mean(self.last_sample_angles*180/np.pi)
+        print(mean_angle)
+
+
+        if len(self.sample_angles) == 0:
+            self.mode = 'forward'
+            self.throttle = 0.2
+            self.brake = 0
+            self.steer = np.clip(mean_angle, -15, 15)
+        elif self.approaching_sample != 'approaching' and (self.mode == 'forward' or (self.mode == 'stop' and self.vel > 0)):
+            # stop the rover
+            self.approaching_sample = 'stopping'
+            self.throttle = 0
+            self.brake = self.brake_set
+            self.mode = 'stop'
+
+            print(self.mode, self.approaching_sample, self.vel)
+            return
+
+        # In a second step, turn the rover towards the sample,
+        # set steering to 0, and go ahead
+        if self.mode == 'stop' and self.vel < 0.1:
+            if (mean_angle < 0.1 and mean_angle > -0.1):
+                self.approaching_sample = 'approaching'
+                self.mode = 'forward'
+                self.throttle = 0.2
+                self.steer = 0
+                return
+            self.approaching_sample = 'turning'
+            self.throttle = 0
+            self.brake = 0
+            self.steer = np.clip(mean_angle / 4, -5, 5)
+            print('Mode:',self.mode, 'Approaching mode:', self.approaching_sample, 'Vel:', self.vel, 'Steer:', self.steer)
+
+        
+
 
 
 
