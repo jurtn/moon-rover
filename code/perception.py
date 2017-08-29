@@ -128,13 +128,11 @@ def perception_step(Rover):
         # Example: Rover.vision_image[:,:,0] = obstacle color-thresholded binary image
         #          Rover.vision_image[:,:,1] = rock_sample color-thresholded binary image
         #          Rover.vision_image[:,:,2] = navigable terrain color-thresholded binary image
-    #Rover.vision_image[:,:,1] = navigable
     # It makes more sense to display obstacles in red and navigable in blue, 
     # to be consistent with the worldmap at the bottom right
     Rover.vision_image[:,:,0] = obstacles * 255
     Rover.vision_image[:,:,1] = rocks * 255
     Rover.vision_image[:,:,2] = navigable * 255
-    # TODO: show obstacles
 
     # 5) Convert map image pixel values to rover-centric coords
     xpix_navigable, ypix_navigable = rover_coords(navigable)
@@ -174,8 +172,6 @@ def perception_step(Rover):
     # make any updates to the worldmap with non-zero roll values.
     if (Rover.roll < 0.5 or Rover.roll > 359.5) and (Rover.pitch < 1. or Rover.pitch > 359.):
         Rover.worldmap[obstacles_y_world, obstacles_x_world, 0] = 255
-        #Rover.worldmap[obstacles_y_world, obstacles_x_world, 2] -= 1
-        #Rover.worldmap[navigable_y_world, navigable_x_world, 0] -= 1
         Rover.worldmap[rocks_y_world, rocks_x_world, 1] = 255
         Rover.worldmap[navigable_y_world, navigable_x_world, 2] = 255
 
@@ -184,8 +180,5 @@ def perception_step(Rover):
         # Rover.nav_dists = rover_centric_pixel_distances
         # Rover.nav_angles = rover_centric_angles
     Rover.nav_dists, Rover.nav_angles = to_polar_coords(xpix_navigable, ypix_navigable)
-    
- 
-    
     
     return Rover

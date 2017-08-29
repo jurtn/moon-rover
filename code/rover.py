@@ -59,4 +59,16 @@ class MoonRover():
         self.picking_up = 0 # Will be set to telemetry value data["picking_up"]
         self.send_pickup = False # Set to True to trigger rock pickup
 
+    def update_steer(self):
+        # We compute the percentiles instead of the mean.
+        # This makes the rover driving slightly on the left side
+        # (it is well-known that on the moon you should drive on the left side of the street)
+        # More seriously, the rover is turning to the right in a dead end, so this 
+        # makes the stearing less than if we would drive on the right side.
+        # Otherwise no difference between driving left or right side.
+        self.steer = np.clip(np.percentile(self.nav_angles * 180/np.pi, 70), -15, 15)
+
+
+
+
 
