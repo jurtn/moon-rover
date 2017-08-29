@@ -33,7 +33,10 @@ class MoonRover():
         ground_truth_3d = np.dstack((ground_truth*0, ground_truth*255, ground_truth*0)).astype(np.float)
         self.ground_truth = ground_truth_3d # Ground truth worldmap
 
-        self.mode = 'forward' # Current mode (can be forward or stop)
+        # Current mode
+        # Can be one of (forward, stop, approach_sample)
+        self.mode = 'forward'
+
         self.throttle_set = 0.2 # Throttle setting when accelerating
         self.brake_set = 10 # Brake setting when braking
         # The stop_forward and go_forward fields below represent total count
